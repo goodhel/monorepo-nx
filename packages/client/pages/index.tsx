@@ -1,13 +1,24 @@
 import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '../styles/Home.module.css'
+// import { Inter } from '@next/font/google'
 import { trpc } from '../utils/tprc'
+import { Fragment } from 'react'
+import { inferProcedureInput } from '@trpc/server';
+import type { AppRouter } from 'server/src/app'
 
-const inter = Inter({ subsets: ['latin'] })
+// const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
-  const test = trpc.getUser.useQuery()
+  // const test = trpc.getUser.useQuery()
+  const listTodo = trpc.post.listPosts.useQuery()
+  const utils = trpc.useContext()
+  
+  const addTodo = trpc.post.createPost.useMutation({
+    async onSuccess() {
+      // refetch the list of todos
+      await utils.post.listPosts.invalidate()
+    }
+  })
+
   return (
     <>
       <Head>
@@ -16,110 +27,77 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
+      <main>
+        <div>
+          <h2 className='text-3xl font-bold underline'>
+            Latest Todos
+            {listTodo.status === 'loading' && '(loading)'}
+          </h2>
 
-            {test.data?.name} a
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
+          {listTodo.data?.map((todo) => (
+            <Fragment key={todo.id}>
+              <h3>{todo.title}</h3>
+            </Fragment>
+          ))}
+
+          <h3 className='text-3xl font-bold underline'>Add a Post</h3>
         </div>
 
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
+        <div>
+          <div className="md:grid md:grid-cols-3 md:gap-6">
+            <div className="mt-5 md:col-span-2 md:mt-0">
+              <form 
+                onSubmit={async (e) => {
+                  /**
+                   * In a real app you probably don't want to use this manually
+                   * Checkout React Hook Form - it works great with tRPC
+                   * @see https://react-hook-form.com/
+                   * @see https://kitchen-sink.trpc.io/react-hook-form
+                   */
+                  e.preventDefault();
+                  const $form = e.currentTarget;
+                  const values = Object.fromEntries(new FormData($form));
+                  type Input = inferProcedureInput<AppRouter['post']['createPost']>;
+                  //    ^?
+                  const input: Input = {
+                    title: values.title as string
+                  };
+                  try {
+                    console.log('input',input)
+                    await addTodo.mutateAsync(input);
+    
+                    $form.reset();
+                  } catch (cause) {
+                    console.error({ cause }, 'Failed to add post');
+                  }
+                }}
+              >
+                <div className="shadow sm:overflow-hidden sm:rounded-md">
+                  <div className="space-y-6 bg-white px-4 py-5 sm:p-6">
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="col-span-3 sm:col-span-2">
+                        <label  className="block text-sm font-medium text-gray-700">Title</label>
+                        <div className="mt-1 flex rounded-md shadow-sm">
+                          {/* <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">http://</span> */}
+                          <input type="text" name="title" id="title" 
+                            className="block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            placeholder="www.example.com"
+                            disabled={addTodo.isLoading}
+                           />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 text-right sm:px-6">
+                    <button type="submit" className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Save</button>
+                    {addTodo.error && (
+                      <p style={{ color: 'red' }}>{addTodo.error.message}</p>
+                    )}
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
         </div>
       </main>
     </>
