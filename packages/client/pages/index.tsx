@@ -1,23 +1,37 @@
 import Head from 'next/head'
 // import { Inter } from '@next/font/google'
 import { trpc } from '../utils/tprc'
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import { inferProcedureInput } from '@trpc/server';
 import type { AppRouter } from 'server/src/app'
+import Link from 'next/link';
 
 // const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
-  // const test = trpc.getUser.useQuery()
   const listTodo = trpc.post.listPosts.useQuery()
   const utils = trpc.useContext()
-  
+  const [title, setTitle] = useState('')
+
   const addTodo = trpc.post.createPost.useMutation({
     async onSuccess() {
       // refetch the list of todos
       await utils.post.listPosts.invalidate()
     }
   })
+
+  const postTodo = async () => {
+    const input = {
+      title
+    }
+
+    try {
+      await addTodo.mutateAsync(input);
+      setTitle('')
+    } catch (error) {
+      console.error({ error }, 'Failed to add post');
+    }
+  }
 
   return (
     <>
@@ -35,9 +49,10 @@ export default function Home() {
           </h2>
 
           {listTodo.data?.map((todo) => (
-            <Fragment key={todo.id}>
+            <article key={todo.id} className='flex gap-2'>
               <h3>{todo.title}</h3>
-            </Fragment>
+              <Link href={`/todo/${todo.id}`}>View More</Link>
+            </article>
           ))}
 
           <h3 className='text-3xl font-bold underline'>Add a Post</h3>
@@ -55,21 +70,8 @@ export default function Home() {
                    * @see https://kitchen-sink.trpc.io/react-hook-form
                    */
                   e.preventDefault();
-                  const $form = e.currentTarget;
-                  const values = Object.fromEntries(new FormData($form));
-                  type Input = inferProcedureInput<AppRouter['post']['createPost']>;
-                  //    ^?
-                  const input: Input = {
-                    title: values.title as string
-                  };
-                  try {
-                    console.log('input',input)
-                    await addTodo.mutateAsync(input);
-    
-                    $form.reset();
-                  } catch (cause) {
-                    console.error({ cause }, 'Failed to add post');
-                  }
+
+                  await postTodo();
                 }}
               >
                 <div className="shadow sm:overflow-hidden sm:rounded-md">
@@ -80,6 +82,8 @@ export default function Home() {
                         <div className="mt-1 flex rounded-md shadow-sm">
                           {/* <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">http://</span> */}
                           <input type="text" name="title" id="title" 
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             className="block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             placeholder="www.example.com"
                             disabled={addTodo.isLoading}
@@ -90,10 +94,10 @@ export default function Home() {
                   </div>
                   <div className="bg-gray-50 px-4 py-3 text-right sm:px-6">
                     <button type="submit" className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Save</button>
+                  </div>
                     {addTodo.error && (
                       <p style={{ color: 'red' }}>{addTodo.error.message}</p>
                     )}
-                  </div>
                 </div>
               </form>
             </div>

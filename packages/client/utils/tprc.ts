@@ -1,5 +1,7 @@
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { NextPageContext } from 'next';
 // import type { AppRouter } from '../server/routers/_app';
 import type { AppRouter } from 'server/src/app'
 
@@ -23,7 +25,22 @@ function getBaseUrl() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
-export const trpc = createTRPCNext<AppRouter>({
+/**
+ * Extend `NextPageContext` with meta data that can be picked up by `responseMeta()` when server-side rendering
+ */
+export interface SSRContext extends NextPageContext {
+  /**
+   * Set HTTP Status code
+   * @example
+   * const utils = trpc.useContext();
+   * if (utils.ssrContext) {
+   *   utils.ssrContext.status = 404;
+   * }
+   */
+  status?: number;
+}
+
+export const trpc = createTRPCNext<AppRouter, SSRContext>({
   config({ ctx }) {
     // console.log(getBaseUrl())
     return {
@@ -45,5 +62,33 @@ export const trpc = createTRPCNext<AppRouter>({
   /**
    * @link https://trpc.io/docs/ssr
    **/
-  ssr: false,
+  ssr: true,
+  /**
+   * Set headers or status code when doing SSR
+   */
+  responseMeta(opts) {
+    const ctx = opts.ctx as SSRContext;
+
+    if (ctx.status) {
+      // If HTTP status set, propagate that
+      return {
+        status: ctx.status,
+      };
+    }
+
+    const error = opts.clientErrors[0];
+    if (error) {
+      // Propagate http first error from API calls
+      return {
+        status: error.data?.httpStatus ?? 500,
+      };
+    }
+
+    // for app caching with SSR see https://trpc.io/docs/caching
+
+    return {};
+  },
 });
+
+export type RouterInput = inferRouterInputs<AppRouter>;
+export type RouterOutput = inferRouterOutputs<AppRouter>;

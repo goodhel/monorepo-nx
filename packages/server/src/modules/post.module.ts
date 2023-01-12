@@ -20,6 +20,32 @@ class _post {
         }
     }
 
+    getTodo = async (id: number) => {
+        try {
+            const detail = await prisma.todo.findUnique({
+                where: {
+                    id
+                }
+            })
+
+            if (!detail) {
+                throw new Error('Todo not found')
+            }
+
+            return {
+                status: true,
+                data: detail
+            }
+        } catch (error) {
+            console.error('getTodo todo module Error: ', error)
+
+            return {
+                status: false,
+                error
+            }
+        }
+    }
+
     addTodo = async (data: Prisma.TodoCreateInput) => {
         try {
             const add = await prisma.todo.create({

@@ -22,6 +22,19 @@ const postRouter = router({
 
         return list.data
     }),
+    getPost: publicProcedure.input(z.object({ id: z.number() })).query( async ({ input }) => {
+        console.log(input)
+        const detail = await m$post.getTodo(input.id)
+
+        if (!detail.status) {
+            throw new TRPCError({
+                code: 'NOT_FOUND',
+                message: `No post with id '${input.id}'`,
+            })
+        }
+
+        return detail.data
+    })
 });
 
 export default postRouter
