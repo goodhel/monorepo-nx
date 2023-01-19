@@ -1,28 +1,24 @@
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import { NextPageContext } from 'next';
+import { httpBatchLink } from '@trpc/client'
+import { createTRPCNext } from '@trpc/next'
+import { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
+import { NextPageContext } from 'next'
 // import type { AppRouter } from '../server/routers/_app';
 import type { AppRouter } from 'server/src/app'
 
-function getBaseUrl() {
-  if (typeof window !== 'undefined')
-    // browser should use relative path
-    return '';
+function getBaseUrl () {
+  // browser should use relative path
+  if (typeof window !== 'undefined') { return '' }
 
-  if (process.env.HOST)
-    return process.env.HOST
+  if (process.env.HOST) { return process.env.HOST }
 
-  if (process.env.VERCEL_URL)
-    // reference for vercel.com
-    return `https://${process.env.VERCEL_URL}`;
+  // reference for vercel.com
+  if (process.env.VERCEL_URL) { return `https://${process.env.VERCEL_URL}` }
 
-  if (process.env.RENDER_INTERNAL_HOSTNAME)
-    // reference for render.com
-    return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
+  // reference for render.com
+  if (process.env.RENDER_INTERNAL_HOSTNAME) { return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}` }
 
   // assume localhost
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  return `http://localhost:${process.env.PORT ?? 3000}`
 }
 
 /**
@@ -41,7 +37,7 @@ export interface SSRContext extends NextPageContext {
 }
 
 export const trpc = createTRPCNext<AppRouter, SSRContext>({
-  config({ ctx }) {
+  config ({ ctx }) {
     // console.log(getBaseUrl())
     return {
       links: [
@@ -50,14 +46,14 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
            * If you want to use SSR, you need to use the server's full URL
            * @link https://trpc.io/docs/ssr
            **/
-          url: `http://localhost:8080/trpc`,
-        }),
-      ],
+          url: 'http://localhost:8080/trpc'
+        })
+      ]
       /**
        * @link https://tanstack.com/query/v4/docs/reference/QueryClient
        **/
       // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
-    };
+    }
   },
   /**
    * @link https://trpc.io/docs/ssr
@@ -66,29 +62,29 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
   /**
    * Set headers or status code when doing SSR
    */
-  responseMeta(opts) {
-    const ctx = opts.ctx as SSRContext;
+  responseMeta (opts) {
+    const ctx = opts.ctx as SSRContext
 
     if (ctx.status) {
       // If HTTP status set, propagate that
       return {
-        status: ctx.status,
-      };
+        status: ctx.status
+      }
     }
 
-    const error = opts.clientErrors[0];
+    const error = opts.clientErrors[0]
     if (error) {
       // Propagate http first error from API calls
       return {
-        status: error.data?.httpStatus ?? 500,
-      };
+        status: error.data?.httpStatus ?? 500
+      }
     }
 
     // for app caching with SSR see https://trpc.io/docs/caching
 
-    return {};
-  },
-});
+    return {}
+  }
+})
 
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;

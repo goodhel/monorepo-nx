@@ -2,19 +2,17 @@ import Head from 'next/head'
 // import { Inter } from '@next/font/google'
 import { trpc } from '../utils/tprc'
 import { Fragment, useState } from 'react'
-import { inferProcedureInput } from '@trpc/server';
-import type { AppRouter } from 'server/src/app'
-import Link from 'next/link';
+import Link from 'next/link'
 
 // const inter = Inter({ subsets: ['latin'] })
 
-export default function Home() {
+export default function Home () {
   const listTodo = trpc.post.listPosts.useQuery()
   const utils = trpc.useContext()
   const [title, setTitle] = useState('')
 
   const addTodo = trpc.post.createPost.useMutation({
-    async onSuccess() {
+    async onSuccess () {
       // refetch the list of todos
       await utils.post.listPosts.invalidate()
     }
@@ -26,10 +24,10 @@ export default function Home() {
     }
 
     try {
-      await addTodo.mutateAsync(input);
+      await addTodo.mutateAsync(input)
       setTitle('')
     } catch (error) {
-      console.error({ error }, 'Failed to add post');
+      console.error({ error }, 'Failed to add post')
     }
   }
 
@@ -61,7 +59,7 @@ export default function Home() {
         <div>
           <div className="md:grid md:grid-cols-3 md:gap-6">
             <div className="mt-5 md:col-span-2 md:mt-0">
-              <form 
+              <form
                 onSubmit={async (e) => {
                   /**
                    * In a real app you probably don't want to use this manually
@@ -69,19 +67,19 @@ export default function Home() {
                    * @see https://react-hook-form.com/
                    * @see https://kitchen-sink.trpc.io/react-hook-form
                    */
-                  e.preventDefault();
+                  e.preventDefault()
 
-                  await postTodo();
+                  await postTodo()
                 }}
               >
                 <div className="shadow sm:overflow-hidden sm:rounded-md">
                   <div className="space-y-6 bg-white px-4 py-5 sm:p-6">
                     <div className="grid grid-cols-3 gap-6">
                       <div className="col-span-3 sm:col-span-2">
-                        <label  className="block text-sm font-medium text-gray-700">Title</label>
+                        <label className="block text-sm font-medium text-gray-700">Title</label>
                         <div className="mt-1 flex rounded-md shadow-sm">
                           {/* <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">http://</span> */}
-                          <input type="text" name="title" id="title" 
+                          <input type="text" name="title" id="title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className="block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
