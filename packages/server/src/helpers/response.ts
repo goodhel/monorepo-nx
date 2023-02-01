@@ -3,8 +3,8 @@ import { TRPCError } from '@trpc/server'
 interface DataType {
     status: boolean
     code?: string
-    data?: any
-    error?: any
+    data?: unknown
+    error?: string
 }
 
 class _response {
