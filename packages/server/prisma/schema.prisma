@@ -16,4 +16,56 @@ model Todo {
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("d_todo")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String    @db.VarChar(150)
+  name      String    @db.VarChar(150)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  deletedAt DateTime?
+  user_role UserRole?
+
+  @@map("auth_user")
+}
+
+model Role {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  user_role UserRole[]
+
+  @@map("auth_role")
+}
+
+model UserRole {
+  user_id Int
+  role_id Int
+  user    User @relation(fields: [user_id], references: [id])
+  role    Role @relation(fields: [role_id], references: [id])
+
+  @@unique([user_id])
+  @@map("auth_user_role")
+}
+
+model Transactions {
+  id          Int              @id @default(autoincrement())
+  user_id     Int
+  date        DateTime         @db.Date
+  amount      Float            @db.DoublePrecision
+  type        TypeTransactions
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @default(now()) @updatedAt
+  deletedAt   DateTime?
+
+  @@map("tsc_transactions")
+}
+
+enum TypeTransactions {
+  EXPENSE
+  INCOME
 }
