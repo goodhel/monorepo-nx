@@ -3,6 +3,7 @@ import { debug } from '../config/app.config.json'
 import { z } from 'zod'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import { User } from '@prisma/client'
 
 interface LoginType {
     email: string
@@ -15,15 +16,37 @@ interface RegisterType {
     name: string
 }
 
+interface LoginOutput {
+  status: boolean
+  code?: string
+  data?: { token: string }
+  error?: string
+}
+
+interface RegisterOutput {
+  status: boolean
+  code?: string
+  data?: User
+  error?: string
+}
+
 class _auth {
-  login = async (body: LoginType) => {
+  login = async (body: LoginType): Promise<LoginOutput> => {
     try {
       const schema = z.object({
         email: z.string().email().transform((val) => val.toLowerCase()),
         password: z.string().min(6)
-      })
+      }).safeParse(body)
 
-      schema.parse(body)
+      if (!schema.success) {
+        const formatted = schema.error.issues.map((issue) => issue.message).join(', ')
+
+        return {
+          status: false,
+          code: 'BAD_REQUEST',
+          error: formatted
+        }
+      }
 
       const user = await prisma.user.findUnique({
         where: {
@@ -78,15 +101,23 @@ class _auth {
     }
   }
 
-  register = async (body: RegisterType) => {
+  register = async (body: RegisterType): Promise<RegisterOutput> => {
     try {
       const schema = z.object({
         email: z.string().email().transform((val) => val.toLowerCase()),
         password: z.string().min(6),
         name: z.string().min(2)
-      })
+      }).safeParse(body)
 
-      schema.parse(body)
+      if (!schema.success) {
+        const formatted = schema.error.issues.map((issue) => issue.message).join(', ')
+
+        return {
+          status: false,
+          code: 'BAD_REQUEST',
+          error: formatted
+        }
+      }
 
       const register = await prisma.user.create({
         data: {

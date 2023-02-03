@@ -2,28 +2,43 @@ import { publicProcedure, router } from '../trpc'
 import { z } from 'zod'
 import m$auth from '../modules/auth.module'
 import response from '../helpers/response'
+import { TRPCError } from '@trpc/server'
 
 const authRouter = router({
+  /**
+   * Register User
+   */
   register: publicProcedure
     .input(z.object({
-      email: z.string().email().transform((val) => val.toLowerCase()),
-      password: z.string().min(6),
-      name: z.string().min(2)
+      email: z.string(),
+      password: z.string(),
+      name: z.string()
     }))
     .mutation(async ({ input }) => {
       const register = await m$auth.register(input)
 
       return response.sendResponse(register)
     }),
+  /**
+   * Login User
+   */
   login: publicProcedure
     .input(z.object({
-      email: z.string().email().transform((val) => val.toLowerCase()),
-      password: z.string().min(6)
+      email: z.string(),
+      password: z.string()
     }))
     .mutation(async ({ input }) => {
       const login = await m$auth.login(input)
 
-      return response.sendResponse(login)
+      if (!login.status) {
+        const code: any = login.code ? login.code : 'BAD_REQUEST'
+        throw new TRPCError({
+          code,
+          message: login.error
+        })
+      }
+
+      return login
     })
 })
 

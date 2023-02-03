@@ -31,10 +31,14 @@ const Login = () => {
         password
       })
 
-      addToken(log.data?.token)
+      if (log.data) {
+        addToken(log.data.token)
 
-      setEmail('')
-      setPassword('')
+        setEmail('')
+        setPassword('')
+      } else {
+        throw new Error('Something went wrong, data is undefined')
+      }
     } catch (error: unknown) {
       // console.log(typeof error)
       // console.error({ error }, 'Failed to add post')
@@ -94,7 +98,7 @@ const Login = () => {
                   <div className='mt-10 flex justify-center'>
                       <div className='text-sm font-semibold text-gray-700'>
                           {'Don\'t have an account ? '}
-                          <Link href="" className='text-indigo-600 hover:text-indigo-800'>
+                          <Link href={'/register'} className='text-indigo-600 hover:text-indigo-800'>
                               Sign Up
                           </Link>
                       </div>
