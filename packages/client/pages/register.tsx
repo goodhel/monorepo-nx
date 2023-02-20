@@ -1,11 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ContainerBlock from '../components/ContainerBlock'
 import { trpc } from '../utils/tprc'
 import { toast } from 'react-toastify'
 import { TRPCClientError } from '@trpc/client'
 import { useRouter } from 'next/router'
+import useAuthStore from '../store/authStore'
 
 const Register = () => {
+  const { token } = useAuthStore()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -49,6 +51,13 @@ const Register = () => {
       }
     }
   }
+
+  useEffect(() => {
+    if (token) {
+      router.push('/dashboard')
+    }
+  }, [router, token])
+
   return (
     <ContainerBlock title='Register'>
         <div className='flex justify-center items-center h-screen'>
